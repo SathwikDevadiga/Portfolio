@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Market Risk Projects | Sathwik Devadiga{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <div class="eyebrow">Market Risk Portfolio</div>
+    <h1>Market Risk Projects</h1>
+    <p class="lead">
+      Two connected market-risk projects plus an independent credit-risk model covering PD, LGD, EAD and Expected Loss.
+    </p>
+  </div>
+
+  <div class="project-flow">
+    <div class="flow-node active">01 · Measure Market Risk</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">02 · Hedge Market Risk</div>
+    <div class="flow-separator">|</div>
+    <div class="flow-node credit">03 · Credit Risk</div>
+  </div>
+
+  <div class="cards project-three-grid">
+    <div class="card project-card featured">
+      <div class="project-image">
+        <div class="bars">
+          <i style="height:22%"></i><i style="height:40%"></i><i style="height:72%"></i>
+          <i style="height:95%"></i><i style="height:65%"></i>
+        </div>
+      </div>
+      <div class="card-pad">
+        <h3>01 · Portfolio VaR &amp; Expected Shortfall</h3>
+        <p>
+          Build a portfolio, calculate Historical / Parametric / Monte Carlo VaR,
+          Expected Shortfall, volatility, drawdown, risk contribution and backtesting.
+        </p>
+        <div class="tags">
+          <span class="tag">VaR</span><span class="tag">ES</span>
+          <span class="tag">Monte Carlo</span><span class="tag">Backtesting</span>
+        </div>
+        <br>
+        <a class="btn primary" href="{{ url_for('dashboard') }}">Run live engine →</a>
+      </div>
+    </div>
+
+    <div class="card project-card">
+      <div class="project-image hedge-visual">
+        <div class="hedge-line before"></div>
+        <div class="hedge-line after"></div>
+        <div class="hedge-label">β → Futures Hedge → Lower Market Exposure</div>
+      </div>
+      <div class="card-pad">
+        <h3>02 · Portfolio Hedging &amp; Risk Optimization</h3>
+        <p>
+          Carry the Project 01 portfolio forward, estimate beta against NIFTY,
+          size an index-futures hedge and compare VaR, ES, volatility and stress P&amp;L.
+        </p>
+        <div class="tags">
+          <span class="tag">Beta Hedge</span><span class="tag">NIFTY Futures</span>
+          <span class="tag">Hedge Ratio</span><span class="tag">Stress P&amp;L</span>
+        </div>
+        <br>
+        <a class="btn" href="{{ url_for('project_hedging') }}">Open hedging →</a>
+      </div>
+    </div>
+    <div class="card project-card">
+      <div class="project-image credit-visual"><div class="credit-flow-mini"><span>Borrower</span><b>→</b><span>PD</span><b>→</b><span>EL</span></div></div>
+      <div class="card-pad">
+        <h3>03 · Credit Risk Model</h3>
+        <p>Estimate Probability of Default using interpretable logistic regression, combine PD with LGD and EAD, validate the model and explain the borrower's risk grade.</p>
+        <div class="tags"><span class="tag">PD</span><span class="tag">LGD</span><span class="tag">EAD</span><span class="tag">Expected Loss</span><span class="tag">ROC-AUC</span><span class="tag">KS</span></div><br>
+        <a class="btn" href="{{ url_for('project_credit_risk') }}">Open credit model →</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

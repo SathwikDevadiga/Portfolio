@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Sathwik Devadiga{% endblock %}</title>
+  <meta name="description" content="Sathwik Devadiga — Data Analyst transitioning into Market Risk and Quantitative Risk.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    .field input,.field select{width:100%;background:#07111d;border:1px solid var(--border);color:var(--text);padding:11px 12px;border-radius:9px}
+    .status{font-size:13px;color:var(--muted);margin-left:10px}
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid #2c4966;border-top-color:var(--blue2);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .chart-panel{min-height:350px}
+    .mini-table{width:100%;border-collapse:collapse}
+    .mini-table td,.mini-table th{padding:10px 8px;border-bottom:1px solid var(--border);font-size:13px}
+    .mini-table th{text-align:left;color:#bcd0e5}.mini-table td{color:#dce8f4}
+    .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#36d399;box-shadow:0 0 0 5px rgba(54,211,153,.1);margin-right:8px}
+    .api-note{font-size:12px;color:var(--muted)}
+    @media(max-width:900px){.form-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header class="nav"><div class="container nav-inner">
+<a class="brand" href="{{ url_for('home') }}"><span class="brand-mark">▥</span>Sathwik Devadiga</a>
+<button class="menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+<nav class="nav-links">
+<a class="{% if request.endpoint=='home' %}active{% endif %}" href="{{ url_for('home') }}">Home</a>
+<a class="{% if request.endpoint=='about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
+<a class="{% if request.endpoint=='skills' %}active{% endif %}" href="{{ url_for('skills') }}">Skills</a>
+<a class="{% if request.endpoint in ['projects','project_var','project_hedging','project_credit_risk'] %}active{% endif %}" href="{{ url_for('projects') }}">Projects</a>
+<!-- <a class="{% if request.endpoint=='dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a> -->
+<!-- <a class="{% if request.endpoint=='research' %}active{% endif %}" href="{{ url_for('research') }}">Research</a> -->
+<a class="{% if request.endpoint=='resume' %}active{% endif %}" href="{{ url_for('resume') }}">Resume</a>
+<a class="{% if request.endpoint=='contact' %}active{% endif %}" href="{{ url_for('contact') }}">Contact</a>
+</nav></div></header>
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer><div class="container">Sathwik Devadiga · Data Analyst → Market Risk Analyst
+<div class="footer-links"><a href="#">LinkedIn</a><a href="#">GitHub</a><a href="mailto:sathwik.devadiga@gmail.com">Email</a></div>
+<div style="margin-top:12px">© 2026 Sathwik Devadiga. Built for professional risk analytics.</div></div></footer>
+{% block scripts %}{% endblock %}
+</body></html>

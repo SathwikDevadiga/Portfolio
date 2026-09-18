@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}About | Sathwik Devadiga{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <!-- =========================
+         ABOUT HERO
+    ========================== -->
+    <section class="about-hero">
+
+        <div class="about-hero-content">
+
+            <div class="eyebrow">ABOUT ME</div>
+
+            <h1>
+                Data Analyst building toward
+                <span class="text-blue">Market Risk & Risk Analytics</span>
+            </h1>
+
+            <p class="about-lead">
+                I'm Sathwik Devadiga, a Data Analyst based in Mumbai with
+                experience in business analytics, dashboard development,
+                automation and data modelling using Python, SQL, Power BI
+                and Excel.
+            </p>
+
+            <p>
+                I'm now applying that analytical background to financial risk —
+                building portfolio risk models covering Value at Risk,
+                Expected Shortfall, volatility, correlation, backtesting,
+                hedging and credit risk analytics.
+            </p>
+
+            <div class="btns about-actions">
+
+                <a href="{{ url_for('projects') }}" class="btn primary">
+                    View Risk Projects →
+                </a>
+
+                <a href="{{ url_for('static', filename='resume/Sathwik_Devadiga_Risk_Resume.pdf') }}" class="btn">
+                    Download Resume
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+        <div class="card card-pad about-profile-card">
+
+            <div class="profile-row">
+                <span>Current Role</span>
+                <strong>Data Analyst</strong>
+            </div>
+
+            <div class="profile-row">
+                <span>Experience</span>
+                <strong>Analytics & Automation</strong>
+            </div>
+
+            <div class="profile-row">
+                <span>Focus</span>
+                <strong>Market Risk & Risk Analytics</strong>
+            </div>
+
+            <div class="profile-row">
+                <span>Core Stack</span>
+                <strong>Python · SQL · Power BI</strong>
+            </div>
+
+            <div class="profile-row">
+                <span>Location</span>
+                <strong>Mumbai, India</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         TRANSITION
+    ========================== -->
+    <section class="section">
+
+        <div class="section-head">
+            <div>
+                <div class="eyebrow">MY TRANSITION</div>
+                <h2>From Data Analytics to Financial Risk</h2>
+            </div>
+        </div>
+
+        <div class="transition-grid">
+
+            <div class="transition-card">
+                <div class="transition-number">01</div>
+
+                <h3>Data Analytics</h3>
+
+                <p>
+                    Building dashboards, analysing operational datasets,
+                    automating reporting workflows and translating business
+                    requirements into analytical solutions.
+                </p>
+
+                <span>Python · SQL · Power BI · Excel</span>
+            </div>
+
+
+            <div class="transition-arrow">→</div>
+
+
+            <div class="transition-card">
+                <div class="transition-number">02</div>
+
+                <h3>Financial Markets</h3>
+
+                <p>
+                    Applying statistical and analytical techniques to market
+                    data, portfolio returns and financial risk factors.
+                </p>
+
+                <span>Returns · Volatility · Correlation</span>
+            </div>
+
+
+            <div class="transition-arrow">→</div>
+
+
+            <div class="transition-card active">
+                <div class="transition-number">03</div>
+
+                <h3>Risk Analytics</h3>
+
+                <p>
+                    Building models that measure portfolio losses, tail risk,
+                    hedge effectiveness and borrower credit exposure.
+                </p>
+
+                <span>VaR · ES · Hedging · PD/LGD/EAD</span>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         EXPERIENCE
+    ========================== -->
+    <section class="section">
+
+        <div class="section-head">
+            <div>
+                <div class="eyebrow">EXPERIENCE</div>
+                <h2>Professional Experience</h2>
+
+                <p>
+                    My professional analytics experience forms the foundation
+                    for the risk modelling work demonstrated in this portfolio.
+                </p>
+            </div>
+        </div>
+
+
+        <div class="experience-timeline">
+
+            <!-- HK GROUP -->
+            <div class="experience-item">
+
+                <div class="experience-marker"></div>
+
+                <div class="card card-pad experience-card">
+
+                    <div class="experience-header">
+
+                        <div>
+                            <h3>Data Analyst</h3>
+                            <div class="company-name">
+                                Hari Krishna Group (HK Group) · Mumbai
+                            </div>
+                        </div>
+
+                        <span class="experience-date">
+                            Jun 2025 — Present
+                        </span>
+
+                    </div>
+
+                    <div class="experience-tags">
+                        <span>Power BI</span>
+                        <span>SQL</span>
+                        <span>Python</span>
+                        <span>Excel</span>
+                        <span>DAX</span>
+                        <span>Power Query</span>
+                    </div>
+
+                    <ul class="experience-points">
+
+                        <li>
+                            Develop and maintain Power BI dashboards covering
+                            stock turnover, customer analytics, Weekly MTO,
+                            best sellers and B2B business performance.
+                        </li>
+
+                        <li>
+                            Transform operational data using SQL, Excel,
+                            Power Query/DAX and Python, reducing manual
+                            data-processing effort by <strong>40–50%</strong>.
+                        </li>
+
+                        <li>
+                            Automated weekly invoice/PDF processing and email
+                            workflows, reducing report preparation time by
+                            <strong>70–80%</strong>.
+                        </li>
+
+                        <li>
+                            Translate stakeholder requirements into reusable
+                            analytical models and dashboards, improving analysis
+                            turnaround by <strong>25–35%</strong>.
+                        </li>
+
+                        <li>
+                            Assess inventory exposure using stock ageing,
+                            turnover, sales velocity and slow-moving inventory,
+                            including exposure to changes in gold prices.
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+
+            <!-- ABANS -->
+            <div class="experience-item">
+
+                <div class="experience-marker"></div>
+
+                <div class="card card-pad experience-card">
+
+                    <div class="experience-header">
+
+                        <div>
+                            <h3>SDE Intern</h3>
+                            <div class="company-name">
+                                Abans Group Pvt. Ltd.
+                            </div>
+                        </div>
+
+                        <span class="experience-date">
+                            Oct 2024 — Jan 2025
+                        </span>
+
+                    </div>
+
+                    <div class="experience-tags">
+                        <span>Excel</span>
+                        <span>API Testing</span>
+                        <span>Postman</span>
+                        <span>Webhooks</span>
+                    </div>
+
+                    <ul class="experience-points">
+
+                        <li>
+                            Managed Excel-based operational datasets and
+                            created lookups, charts and analytical outputs.
+                        </li>
+
+                        <li>
+                            Performed API testing using Postman and supported
+                            a webhook-integrated WhatsApp chatbot for
+                            recruitment and internal workflows.
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         EDUCATION
+    ========================== -->
+    <section class="section">
+
+        <div class="section-head">
+            <div>
+                <div class="eyebrow">EDUCATION</div>
+                <h2>Education & Learning</h2>
+            </div>
+        </div>
+
+
+        <div class="education-grid">
+
+            <div class="card card-pad education-card">
+
+                <div class="education-icon">01</div>
+
+                <div>
+                    <h3>B.Sc. Information Technology</h3>
+
+                    <p class="education-institute">
+                        Jai Hind College · Mumbai University
+                    </p>
+
+                    <strong>CGPA: 8.9</strong>
+
+                    <p class="muted">
+                        Foundation in programming, databases,
+                        statistics and information technology.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="card card-pad education-card">
+
+                <div class="education-icon">02</div>
+
+                <div>
+                    <h3>Introduction to Risk Management</h3>
+
+                    <p class="education-institute">
+                        Risk Management Certification
+                    </p>
+
+                    <p class="muted">
+                        Developed foundational understanding of financial
+                        risk concepts and their application to risk analysis.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         FINAL CTA
+    ========================== -->
+    <section class="section">
+
+        <div class="card card-pad about-cta">
+
+            <div>
+                <div class="eyebrow">WHAT I'M BUILDING TOWARD</div>
+
+                <h2>Market Risk / Risk Analyst Opportunities</h2>
+
+                <p>
+                    I'm looking to combine my professional analytics and
+                    automation experience with financial risk modelling,
+                    portfolio analytics and risk reporting.
+                </p>
+            </div>
+
+            <div class="btns">
+
+                <a href="{{ url_for('projects') }}" class="btn primary">
+                    Explore My Projects →
+                </a>
+
+                <a href="{{ url_for('contact') }}" class="btn">
+                    Contact Me
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}

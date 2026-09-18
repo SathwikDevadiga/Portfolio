@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Credit Risk Model | Sathwik Devadiga{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <div class="eyebrow">Project 03 · Credit Risk Project</div>
+    <h1>Credit Risk Assessment &amp; Expected Loss</h1>
+    <p class="lead">Business question: What is the probability this borrower defaults, and what could we lose?</p>
+  </div>
+
+  <div class="credit-process card card-pad">
+    <div class="credit-process-node"><strong>Borrower Data</strong><span>Income · debt · history</span></div><div class="flow-arrow">→</div>
+    <div class="credit-process-node"><strong>Credit Assessment</strong><span>Interpretable PD model</span></div><div class="flow-arrow">→</div>
+    <div class="credit-process-node"><strong>PD</strong><span>Default probability</span></div><div class="flow-arrow">→</div>
+    <div class="credit-process-node"><strong>LGD × EAD</strong><span>Severity &amp; exposure</span></div><div class="flow-arrow">→</div>
+    <div class="credit-process-node accent"><strong>Expected Loss</strong><span>PD × LGD × EAD</span></div>
+  </div>
+
+  <section class="section"><div class="card card-pad">
+    <div class="section-head"><div><div class="eyebrow">Borrower Input</div><h2>Borrower Credit Profile</h2><p>Adjust the financial and behavioural inputs, then reassess the borrower.</p></div></div>
+    <div class="credit-form-grid">
+      <div class="field"><label>Annual Income (₹)</label><input id="annual_income" type="number" value="1200000"></div>
+      <div class="field"><label>Requested Loan (₹)</label><input id="loan_amount" type="number" value="500000"></div>
+      <div class="field"><label>Existing EMI / Month (₹)</label><input id="existing_emi" type="number" value="18000"></div>
+      <div class="field"><label>Age</label><input id="age" type="number" value="31"></div>
+      <div class="field"><label>Credit Utilization (%)</label><input id="credit_utilization" type="number" value="35" min="0" max="100"></div>
+      <div class="field"><label>Delinquencies — Last 12M</label><input id="delinquencies_12m" type="number" value="0" min="0"></div>
+      <div class="field"><label>Credit History (Years)</label><input id="credit_history_years" type="number" value="6" min="0"></div>
+      <div class="field"><label>Loan Tenure (Years)</label><input id="loan_tenure_years" type="number" value="5" min="1"></div>
+      <div class="field"><label>Employment Type</label><select id="employment_type"><option>Salaried</option><option>Self-employed</option><option>Contract</option></select></div>
+      <div class="field"><label>Home Ownership</label><select id="home_ownership"><option>Owned</option><option>Mortgage</option><option selected>Rented</option></select></div>
+      <div class="field"><label>Loan Purpose</label><select id="loan_purpose"><option>Home</option><option>Auto</option><option selected>Personal</option><option>Business</option><option>Education</option></select></div>
+      <div class="field"><label>LGD Assumption (%)</label><input id="lgd" type="number" value="45" min="0" max="100"></div>
+      <div class="field"><label>Exposure at Default / EAD (₹)</label><input id="ead" type="number" value="500000"></div>
+    </div>
+    <div class="btns"><button id="assessBtn" class="btn primary" onclick="assessBorrower()">Assess Borrower →</button><button class="btn" onclick="loadLowRiskExample()">Low-risk example</button><button class="btn" onclick="loadHighRiskExample()">Higher-risk example</button><span id="creditStatus" class="status"></span></div>
+  </div></section>
+
+  <section class="section">
+    <div class="section-head"><div><div class="eyebrow">Borrower Risk Assessment</div><h2>Credit Decision View</h2></div></div>
+    <div class="credit-kpi-grid">
+      <div class="card kpi"><span>Probability of Default</span><strong id="pdValue">—</strong></div>
+      <div class="card kpi"><span>Risk Grade</span><strong id="riskGrade">—</strong><small id="riskLabel"></small></div>
+      <div class="card kpi"><span>Credit Score</span><strong id="creditScore">—</strong></div>
+      <div class="card kpi"><span>LGD</span><strong id="lgdValue">—</strong></div>
+      <div class="card kpi"><span>EAD</span><strong id="eadValue">—</strong></div>
+      <div class="card kpi featured-kpi"><span>Expected Loss</span><strong class="warning" id="expectedLoss">—</strong></div>
+    </div>
+  </section>
+
+  <section class="section"><div class="about-grid">
+    <div class="card card-pad"><div class="eyebrow">Why this rating?</div><h2>Key Risk Drivers</h2><p>The primary model is logistic regression. These are the largest model contributions for this borrower.</p><div id="driverList" class="driver-list"></div></div>
+    <div class="card card-pad"><div class="eyebrow">Derived Assessment</div><h2>Affordability Indicators</h2><table class="mini-table">
+      <tr><th>EMI / Monthly Income</th><td id="emiRatio">—</td></tr><tr><th>Loan / Annual Income</th><td id="loanIncomeRatio">—</td></tr>
+      <tr><th>Primary PD Model</th><td>Logistic Regression</td></tr><tr><th>Nonlinear Benchmark</th><td>Gradient Boosting</td></tr><tr><th>Benchmark PD</th><td id="benchmarkPd">—</td></tr>
+    </table></div>
+  </div></section>
+
+  <section class="section">
+    <div class="section-head"><div><div class="eyebrow">Model Validation</div><h2>Discrimination, classification and calibration</h2><p>Accuracy alone is not enough for a credit-risk model.</p></div></div>
+    <div class="credit-kpi-grid validation-kpis"><div class="card kpi"><span>Logistic ROC-AUC</span><strong id="aucLogistic">—</strong></div><div class="card kpi"><span>Tree Benchmark AUC</span><strong id="aucTree">—</strong></div><div class="card kpi"><span>KS Statistic</span><strong id="ksValue">—</strong></div><div class="card kpi"><span>Recall</span><strong id="recallValue">—</strong></div></div>
+    <div class="about-grid" style="margin-top:18px;">
+      <div class="card card-pad chart-panel"><h3>Confusion Matrix</h3><div id="confusionChart" style="height:340px;"></div></div>
+      <div class="card card-pad chart-panel"><h3>Calibration — Predicted PD vs Actual Default Rate</h3><div id="calibrationChart" style="height:340px;"></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><div><div class="eyebrow">Portfolio Credit Exposure</div><h2>From One Borrower to a Credit Portfolio</h2><p>Expected Loss becomes more useful when aggregated across borrowers and exposures.</p></div></div>
+    <div class="kpis"><div class="card kpi"><span>Borrowers</span><strong id="portfolioBorrowers">—</strong></div><div class="card kpi"><span>Total EAD</span><strong id="portfolioExposure">—</strong></div><div class="card kpi"><span>Exposure-weighted PD</span><strong id="portfolioPd">—</strong></div><div class="card kpi"><span>Portfolio Expected Loss</span><strong class="warning" id="portfolioEl">—</strong></div></div>
+    <div class="about-grid" style="margin-top:18px;">
+      <div class="card card-pad"><h3>Exposure by Risk Grade</h3><table class="comparison-table"><thead><tr><th>Grade</th><th>Borrowers</th><th>Exposure</th><th>Expected Loss</th></tr></thead><tbody id="gradeRows"></tbody></table></div>
+      <div class="card card-pad chart-panel"><h3>Expected Loss by Risk Grade</h3><div id="gradeChart" style="height:350px;"></div></div>
+    </div>
+  </section>
+
+  <section class="section"><div class="card card-pad"><div class="eyebrow">Business Interpretation</div><h2>PD is only one part of credit risk</h2><p>A borrower can have a relatively low probability of default but still create a meaningful expected loss when exposure or loss severity is large. This project separates the PD model from LGD and EAD assumptions and combines them only when calculating Expected Loss.</p><div class="notice">This project uses a deterministic synthetic credit dataset so it can run locally without storing real borrower information. It demonstrates modelling and validation workflow, not a production lending decision.</div></div></section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const plotConfig={responsive:true,displaylogo:false};
+function fmtINR(v){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v)}
+function pct(v,d=1){return (Number(v)*100).toFixed(d)+'%'}
+function payload(){return {annual_income:+annual_income.value,loan_amount:+loan_amount.value,existing_emi:+existing_emi.value,age:+age.value,credit_utilization:+credit_utilization.value/100,delinquencies_12m:+delinquencies_12m.value,credit_history_years:+credit_history_years.value,loan_tenure_years:+loan_tenure_years.value,employment_type:employment_type.value,home_ownership:home_ownership.value,loan_purpose:loan_purpose.value,lgd:+lgd.value/100,ead:+ead.value}}
+function setStatus(t){creditStatus.textContent=t}
+function renderValidation(m){aucLogistic.textContent=m.logistic_auc.toFixed(3);aucTree.textContent=m.tree_auc.toFixed(3);ksValue.textContent=m.ks.toFixed(3);recallValue.textContent=pct(m.recall);const c=m.confusion_matrix;Plotly.react('confusionChart',[{z:[[c.tn,c.fp],[c.fn,c.tp]],x:['Predicted Non-default','Predicted Default'],y:['Actual Non-default','Actual Default'],type:'heatmap',colorscale:[[0,'#071421'],[1,'#2f8cff']],showscale:false,text:[[c.tn,c.fp],[c.fn,c.tp]],texttemplate:'%{text}',textfont:{size:20,color:'#eef4fb'}}],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{color:'#cbd7e4'},margin:{l:120,r:20,t:20,b:75},xaxis:{automargin:true},yaxis:{automargin:true,autorange:'reversed'}},plotConfig);const pred=m.calibration.map(x=>x.predicted_pd),actual=m.calibration.map(x=>x.actual_default_rate),mx=Math.max(...pred,.1);Plotly.react('calibrationChart',[{x:pred,y:actual,type:'scatter',mode:'lines+markers',name:'Observed',line:{color:'#2f8cff',width:2}},{x:[0,mx],y:[0,mx],type:'scatter',mode:'lines',name:'Perfect calibration',line:{color:'#7f8fa3',dash:'dash'}}],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{color:'#cbd7e4'},margin:{l:65,r:20,t:20,b:60},xaxis:{title:'Mean Predicted PD',tickformat:'.0%',gridcolor:'#17314a'},yaxis:{title:'Actual Default Rate',tickformat:'.0%',gridcolor:'#17314a'},legend:{orientation:'h',y:1.12}},plotConfig)}
+function renderAssessment(d){pdValue.textContent=pct(d.pd);riskGrade.textContent=d.risk_grade;riskLabel.textContent=d.risk_label;creditScore.textContent=d.credit_score;lgdValue.textContent=pct(d.lgd);eadValue.textContent=fmtINR(d.ead);expectedLoss.textContent=fmtINR(d.expected_loss);emiRatio.textContent=pct(d.derived.emi_to_income);loanIncomeRatio.textContent=d.derived.loan_to_income.toFixed(2)+'x';benchmarkPd.textContent=pct(d.benchmark_pd);driverList.innerHTML=d.drivers.map(x=>`<div class="driver-row"><div><strong>${x.feature}</strong><span>${x.direction}</span></div><div class="${x.impact>0?'driver-risk':'driver-protective'}">${x.impact>0?'+':''}${x.impact.toFixed(2)}</div></div>`).join('');renderValidation(d.model_metrics)}
+async function assessBorrower(){assessBtn.disabled=true;assessBtn.textContent='Assessing...';setStatus('Calculating PD and Expected Loss...');try{const r=await fetch('/api/credit-risk/assess',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload())});const d=await r.json();if(!r.ok)throw new Error(d.error||'Assessment failed');renderAssessment(d);setStatus('Assessment updated')}catch(e){setStatus('Error: '+e.message)}finally{assessBtn.disabled=false;assessBtn.textContent='Assess Borrower →'}}
+function loadLowRiskExample(){annual_income.value=2200000;loan_amount.value=450000;existing_emi.value=8000;age.value=38;credit_utilization.value=18;delinquencies_12m.value=0;credit_history_years.value=12;loan_tenure_years.value=3;employment_type.value='Salaried';home_ownership.value='Owned';loan_purpose.value='Auto';lgd.value=35;ead.value=450000;assessBorrower()}
+function loadHighRiskExample(){annual_income.value=520000;loan_amount.value=850000;existing_emi.value=22000;age.value=27;credit_utilization.value=82;delinquencies_12m.value=2;credit_history_years.value=2;loan_tenure_years.value=5;employment_type.value='Contract';home_ownership.value='Rented';loan_purpose.value='Personal';lgd.value=55;ead.value=850000;assessBorrower()}
+async function loadPortfolio(){const r=await fetch('/api/credit-risk/portfolio');const d=await r.json();if(!r.ok)return;portfolioBorrowers.textContent=d.borrowers;portfolioExposure.textContent=fmtINR(d.total_exposure);portfolioPd.textContent=pct(d.weighted_pd);portfolioEl.textContent=fmtINR(d.portfolio_expected_loss);gradeRows.innerHTML=d.grade_summary.map(x=>`<tr><td><strong>${x.grade}</strong></td><td>${x.borrowers}</td><td>${fmtINR(x.exposure)}</td><td>${fmtINR(x.expected_loss)}</td></tr>`).join('');Plotly.react('gradeChart',[{x:d.grade_summary.map(x=>x.grade),y:d.grade_summary.map(x=>x.expected_loss),type:'bar',marker:{color:'#2f8cff'}}],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{color:'#cbd7e4'},margin:{l:80,r:20,t:20,b:55},xaxis:{title:'Risk Grade',gridcolor:'#17314a'},yaxis:{title:'Expected Loss (₹)',gridcolor:'#17314a'}},plotConfig)}
+window.addEventListener('load',()=>{assessBorrower();loadPortfolio()});
+</script>
+{% endblock %}

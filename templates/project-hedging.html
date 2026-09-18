@@ -1,0 +1,742 @@
+{% extends "base.html" %}
+{% block title %}Portfolio Hedging | Sathwik Devadiga{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <div class="eyebrow">Project 02 · Portfolio Hedging</div>
+    <h1>Index Futures Hedge &amp; Risk Optimization</h1>
+    <p class="lead">
+      Portfolio → Current Exposure → Select Hedge → Calculate Hedge →
+      Recalculate Risk → Compare
+    </p>
+  </div>
+
+  <div id="noPortfolio" class="card card-pad" style="display:none;">
+    <h2>No Project 01 portfolio found</h2>
+    <p>Build and calculate a portfolio in the VaR / ES engine first. The holdings and weights will be carried here automatically.</p>
+    <a class="btn primary" href="{{ url_for('dashboard') }}">Go to Project 01 →</a>
+  </div>
+
+  <div id="hedgeApp" style="display:none;">
+    <section class="section" style="padding-top:0;">
+      <div class="card card-pad">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Step 1 · Current Exposure</div>
+            <h2>Portfolio Carried From Project 01</h2>
+          </div>
+          <a class="btn" href="{{ url_for('dashboard') }}">← Edit Portfolio</a>
+        </div>
+
+        <div class="hedge-layout">
+          <div>
+            <div class="portfolio-table-wrapper">
+              <table class="portfolio-table">
+                <thead>
+                  <tr>
+                    <th>Stock</th>
+                    <th style="width:150px;">Weight (%)</th>
+                    <th style="width:60px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="hedgeHoldings"></tbody>
+              </table>
+
+              <div class="portfolio-actions">
+                <button type="button" class="btn" onclick="addHedgeStockRow()">+ Add Stock</button>
+                <div class="weight-total">
+                  Total Weight:
+                  <strong id="hedgeTotalWeight">0.0%</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="btns" style="margin-bottom:0;">
+              <button id="applyPortfolioBtn" class="btn primary" onclick="applyPortfolioChanges()">
+                Apply Portfolio Changes
+              </button>
+              <span id="portfolioEditStatus" class="status"></span>
+            </div>
+          </div>
+
+          <div class="hedge-summary-grid">
+            <div class="metric-box"><span>Portfolio Value</span><strong id="hPortfolioValue">—</strong></div>
+            <div class="metric-box"><span>Portfolio Beta</span><strong id="hBeta">—</strong></div>
+            <div class="metric-box"><span>NIFTY Level</span><strong id="hNifty">—</strong></div>
+            <div class="metric-box"><span>99% VaR</span><strong class="danger" id="hBeforeVar">—</strong></div>
+          </div>
+        </div>
+
+        <div id="hedgeProgress" class="risk-progress">
+          <div class="risk-progress-head">
+            <span id="hedgeProgressMessage">Loading portfolio...</span>
+            <strong id="hedgeProgressPercent">0%</strong>
+          </div>
+          <div class="risk-progress-track">
+            <div id="hedgeProgressBar" class="risk-progress-bar"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="card card-pad">
+        <div class="eyebrow">Step 2 · Select Hedge</div>
+        <div class="section-head">
+          <div>
+            <h2>NIFTY Futures Hedge</h2>
+            <p>Use portfolio beta to offset systematic market exposure. Adjust the ratio instead of assuming risk must always be fully eliminated.</p>
+          </div>
+        </div>
+
+        <div class="hedge-controls hedge-controls-v2">
+          <div class="metric-box fixed-lot-card">
+            <span>NIFTY Futures Lot Size</span>
+            <strong>65</strong>
+            <small>Fixed for this project model</small>
+          </div>
+
+          <div class="field">
+            <label>Number of Futures Contracts</label>
+            <input id="contractLots" type="number" value="0" min="0" step="1">
+            <div class="api-note">
+              Enter the number of lots. Hedge ratio will update automatically.
+            </div>
+          </div>
+
+          <div class="slider-panel">
+            <div class="slider-head">
+              <span>Hedge Ratio</span>
+              <strong id="hedgeRatioLabel">75%</strong>
+            </div>
+            <input id="hedgeRatio" class="hedge-slider" type="range" min="0" max="100" value="75" step="1">
+            <div class="slider-scale"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+          </div>
+        </div>
+
+        <div class="kpis hedge-kpis">
+          <div class="card kpi"><span>Hedge Notional</span><strong id="hedgeNotional">—</strong></div>
+          <div class="card kpi"><span>Theoretical Contracts</span><strong id="theoreticalContracts">—</strong></div>
+          <div class="card kpi"><span>Tradable Contracts</span><strong id="roundedContracts">—</strong></div>
+          <div class="card kpi"><span>Direction</span><strong id="hedgeDirection">—</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Step 3 · Recalculate Risk</div>
+          <h2>Before vs After Hedge</h2>
+        </div>
+      </div>
+
+      <div class="card card-pad">
+        <table class="comparison-table">
+          <thead>
+            <tr><th>Metric</th><th>Before Hedge</th><th>After Hedge</th><th>Change</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Portfolio Beta</td><td id="cBetaBefore">—</td><td id="cBetaAfter">—</td><td id="cBetaChange">—</td></tr>
+            <tr><td>Volatility</td><td id="cVolBefore">—</td><td id="cVolAfter">—</td><td id="cVolChange">—</td></tr>
+            <tr><td>95% VaR</td><td id="cVar95Before">—</td><td id="cVar95After">—</td><td id="cVar95Change">—</td></tr>
+            <tr><td>99% VaR</td><td id="cVarBefore">—</td><td id="cVarAfter">—</td><td id="cVarChange">—</td></tr>
+            <tr><td>99% Expected Shortfall</td><td id="cEsBefore">—</td><td id="cEsAfter">—</td><td id="cEsChange">—</td></tr>
+            <tr><td>Stress Loss (NIFTY -10%)</td><td id="cStressBefore">—</td><td id="cStressAfter">—</td><td id="cStressChange">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="about-grid">
+        <div class="card card-pad">
+          <div class="eyebrow">Hedge Effectiveness</div>
+          <h2 id="effectivenessValue">—</h2>
+          <p id="effectivenessText">Reduction in 99% historical VaR at the selected hedge ratio.</p>
+          <div class="effectiveness-track"><div id="effectivenessBar" class="effectiveness-bar"></div></div>
+        </div>
+
+        <div class="card card-pad">
+          <div class="eyebrow">Risk Appetite View</div>
+          <h2 id="riskAppetiteTitle">—</h2>
+          <p id="riskAppetiteText">Move the hedge-ratio slider to see the trade-off between retained market exposure and risk reduction.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Step 4 · Scenario Analysis</div>
+          <h2>NIFTY Shock: Unhedged vs Hedged P&amp;L</h2>
+        </div>
+      </div>
+
+      <div class="about-grid">
+        <div class="card card-pad">
+          <table class="comparison-table">
+            <thead><tr><th>NIFTY Scenario</th><th>Unhedged P&amp;L</th><th>Hedged P&amp;L</th></tr></thead>
+            <tbody id="scenarioRows"></tbody>
+          </table>
+        </div>
+        <div class="card card-pad chart-panel">
+          <div id="scenarioChart" style="height:350px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="card card-pad">
+        <div class="eyebrow">Interpretation</div>
+        <h2>Hedging is a risk-budget decision</h2>
+        <p>
+          A 100% beta hedge targets systematic market exposure, but it is not automatically optimal.
+          A partial hedge can be preferable when the objective is to reduce VaR or stress loss while retaining
+          some upside participation. The slider demonstrates how hedge size can be aligned with risk appetite.
+        </p>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const stockNames={
+  "RELIANCE.NS":"Reliance Industries",
+  "TCS.NS":"Tata Consultancy Services",
+  "HDFCBANK.NS":"HDFC Bank",
+  "INFY.NS":"Infosys",
+  "ICICIBANK.NS":"ICICI Bank",
+  "SBIN.NS":"State Bank of India",
+  "BHARTIARTL.NS":"Bharti Airtel",
+  "ITC.NS":"ITC",
+  "LT.NS":"Larsen & Toubro",
+  "AXISBANK.NS":"Axis Bank",
+  "KOTAKBANK.NS":"Kotak Mahindra Bank",
+  "HINDUNILVR.NS":"Hindustan Unilever",
+  "MARUTI.NS":"Maruti Suzuki",
+  "M&M.NS":"Mahindra & Mahindra",
+  "TATAMOTORS.NS":"Tata Motors",
+  "SUNPHARMA.NS":"Sun Pharmaceutical",
+  "BAJFINANCE.NS":"Bajaj Finance",
+  "ADANIENT.NS":"Adani Enterprises",
+  "ASIANPAINT.NS":"Asian Paints",
+  "TITAN.NS":"Titan Company"
+};
+
+
+const hedgeStocks=Object.entries(stockNames).map(([ticker,name])=>({ticker,name}));
+
+function createHedgeStockOptions(selectedTicker=""){
+  let html='<option value="">Select a stock</option>';
+  hedgeStocks.forEach(stock=>{
+    const selected=stock.ticker===selectedTicker?'selected':'';
+    html+=`<option value="${stock.ticker}" ${selected}>${stock.name}</option>`;
+  });
+  return html;
+}
+
+function addHedgeStockRow(ticker="",weight=""){
+  const tbody=document.getElementById("hedgeHoldings");
+  const row=document.createElement("tr");
+
+  row.innerHTML=`
+    <td>
+      <select class="hedge-stock-select">
+        ${createHedgeStockOptions(ticker)}
+      </select>
+    </td>
+    <td>
+      <input
+        type="number"
+        class="hedge-stock-weight"
+        min="0"
+        max="100"
+        step="0.1"
+        value="${weight}"
+        oninput="updateHedgeTotalWeight();saveHedgePortfolioDraft()"
+      >
+    </td>
+    <td>
+      <button type="button" class="remove-stock" onclick="removeHedgeStockRow(this)">×</button>
+    </td>
+  `;
+
+  tbody.appendChild(row);
+
+  row.querySelector(".hedge-stock-select").addEventListener("change",()=>{
+    saveHedgePortfolioDraft();
+  });
+
+  updateHedgeTotalWeight();
+}
+
+function removeHedgeStockRow(button){
+  const rows=document.querySelectorAll("#hedgeHoldings tr");
+
+  if(rows.length<=1){
+    const row=button.closest("tr");
+    row.querySelector(".hedge-stock-select").value="";
+    row.querySelector(".hedge-stock-weight").value="";
+  }else{
+    button.closest("tr").remove();
+  }
+
+  updateHedgeTotalWeight();
+  saveHedgePortfolioDraft();
+}
+
+function updateHedgeTotalWeight(){
+  let total=0;
+  document.querySelectorAll(".hedge-stock-weight").forEach(input=>{
+    total+=Number(input.value)||0;
+  });
+
+  const el=document.getElementById("hedgeTotalWeight");
+  el.textContent=total.toFixed(1)+"%";
+  el.style.color=Math.abs(total-100)<0.01?"#36d399":"#ffb52e";
+}
+
+function getHedgePortfolioInputs(){
+  const tickers=[];
+  const weights=[];
+  const seen=new Set();
+
+  document.querySelectorAll("#hedgeHoldings tr").forEach(row=>{
+    const ticker=row.querySelector(".hedge-stock-select").value;
+    const weight=Number(row.querySelector(".hedge-stock-weight").value);
+
+    if(ticker && weight>0){
+      if(seen.has(ticker)){
+        throw new Error("The same stock has been added more than once.");
+      }
+      seen.add(ticker);
+      tickers.push(ticker);
+      weights.push(weight);
+    }
+  });
+
+  if(tickers.length===0){
+    throw new Error("Add at least one stock.");
+  }
+
+  const total=weights.reduce((a,b)=>a+b,0);
+
+  if(Math.abs(total-100)>0.01){
+    throw new Error(`Portfolio weights must equal 100%. Current total: ${total.toFixed(1)}%`);
+  }
+
+  return {tickers,weights};
+}
+
+function saveHedgePortfolioDraft(){
+  try{
+    const tickers=[];
+    const weights=[];
+
+    document.querySelectorAll("#hedgeHoldings tr").forEach(row=>{
+      const ticker=row.querySelector(".hedge-stock-select").value;
+      const weight=Number(row.querySelector(".hedge-stock-weight").value)||0;
+      if(ticker){
+        tickers.push(ticker);
+        weights.push(weight);
+      }
+    });
+
+    if(tickers.length===0) return;
+
+    savedPortfolio={
+      ...savedPortfolio,
+      tickers,
+      weights,
+      saved_at:new Date().toISOString()
+    };
+
+    localStorage.setItem("marketRiskPortfolio",JSON.stringify(savedPortfolio));
+    document.getElementById("portfolioEditStatus").textContent="Changes saved";
+  }catch(e){}
+}
+
+async function applyPortfolioChanges(){
+  try{
+    const {tickers,weights}=getHedgePortfolioInputs();
+
+    savedPortfolio={
+      ...savedPortfolio,
+      tickers,
+      weights,
+      saved_at:new Date().toISOString()
+    };
+
+    localStorage.setItem("marketRiskPortfolio",JSON.stringify(savedPortfolio));
+
+    document.getElementById("portfolioEditStatus").textContent="Recalculating...";
+    hedgeData=null;
+    await startHedgeAnalysis();
+  }catch(error){
+    document.getElementById("portfolioEditStatus").textContent="Error: "+error.message;
+  }
+}
+
+let hedgeData=null;
+let savedPortfolio=null;
+
+const plotConfig={responsive:true,displaylogo:false};
+
+function fmtINR(v){
+  return new Intl.NumberFormat('en-IN',{
+    style:'currency',currency:'INR',maximumFractionDigits:0
+  }).format(v);
+}
+
+function pct(v,digits=1){
+  return (Number(v)*100).toFixed(digits)+'%';
+}
+
+function mean(a){
+  return a.reduce((s,x)=>s+x,0)/a.length;
+}
+
+function std(a){
+  if(a.length<2) return 0;
+  const m=mean(a);
+  const variance=a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1);
+  return Math.sqrt(variance);
+}
+
+function covariance(a,b){
+  const ma=mean(a), mb=mean(b);
+  let s=0;
+  for(let i=0;i<a.length;i++) s+=(a[i]-ma)*(b[i]-mb);
+  return s/(a.length-1);
+}
+
+function quantile(values,q){
+  const a=[...values].sort((x,y)=>x-y);
+  const pos=(a.length-1)*q;
+  const base=Math.floor(pos);
+  const rest=pos-base;
+  if(a[base+1]!==undefined){
+    return a[base]+rest*(a[base+1]-a[base]);
+  }
+  return a[base];
+}
+
+function historicalTailRisk(returns,value,confidence){
+  const alpha=1-confidence;
+  const q=quantile(returns,alpha);
+  const tail=returns.filter(x=>x<=q);
+  const varAmt=Math.max(0,-q*value);
+  const esAmt=Math.max(0,-mean(tail)*value);
+  return {varAmt,esAmt};
+}
+
+function riskMetrics(returns,indexReturns,value){
+  const r95=historicalTailRisk(returns,value,0.95);
+  const r99=historicalTailRisk(returns,value,0.99);
+  const volatility=std(returns)*Math.sqrt(252);
+  const beta=covariance(returns,indexReturns)/(std(indexReturns)**2);
+
+  return {
+    beta,
+    volatility,
+    var95:r95.varAmt,
+    es95:r95.esAmt,
+    var99:r99.varAmt,
+    es99:r99.esAmt
+  };
+}
+
+function reduction(before,after){
+  if(!Number.isFinite(before) || before===0) return 0;
+  return (before-after)/Math.abs(before);
+}
+
+function changeCell(el,before,after){
+  const r=reduction(before,after);
+  const arrow=r>=0?'↓':'↑';
+  el.textContent=arrow+Math.abs(r*100).toFixed(1)+'%';
+  el.className=r>=0?'success':'danger';
+}
+
+function updateHedgeProgress(percent,message){
+  document.getElementById('hedgeProgressPercent').textContent=percent+'%';
+  document.getElementById('hedgeProgressMessage').textContent=message;
+  document.getElementById('hedgeProgressBar').style.width=percent+'%';
+}
+
+function renderHoldings(){
+  const tbody=document.getElementById("hedgeHoldings");
+  tbody.innerHTML="";
+
+  savedPortfolio.tickers.forEach((ticker,i)=>{
+    addHedgeStockRow(ticker,Number(savedPortfolio.weights[i]));
+  });
+
+  updateHedgeTotalWeight();
+  document.getElementById('hPortfolioValue').textContent=fmtINR(savedPortfolio.portfolio_value);
+}
+
+async function startHedgeAnalysis(){
+  const lotSize=65;
+
+  const payload={
+    tickers:savedPortfolio.tickers.join(','),
+    weights:savedPortfolio.weights.join(','),
+    portfolio_value:savedPortfolio.portfolio_value,
+    period:savedPortfolio.period||'2y',
+    lot_size:lotSize
+  };
+
+  updateHedgeProgress(0,'Starting hedge analysis...');
+
+  const r=await fetch('/api/hedge/start',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+
+  const d=await r.json();
+
+  if(!r.ok){
+    throw new Error(d.error||'Unable to start hedge analysis');
+  }
+
+  return new Promise((resolve,reject)=>{
+    const interval=setInterval(async()=>{
+      try{
+        const pr=await fetch('/api/hedge/progress/'+d.job_id);
+        const job=await pr.json();
+
+        if(!pr.ok){
+          throw new Error(job.error||'Unable to read hedge progress');
+        }
+
+        updateHedgeProgress(job.progress,job.message);
+
+        if(job.status==='complete'){
+          clearInterval(interval);
+          hedgeData=job.result;
+          initializeHedgeView();
+          document.getElementById("portfolioEditStatus").textContent="Portfolio updated";
+          resolve(job.result);
+        }
+
+        if(job.status==='error'){
+          clearInterval(interval);
+          reject(new Error(job.error||'Hedge analysis failed'));
+        }
+
+      }catch(err){
+        clearInterval(interval);
+        updateHedgeProgress(0,'Error: '+err.message);
+        reject(err);
+      }
+    },500);
+  });
+}
+
+function initializeHedgeView(){
+  document.getElementById('hBeta').textContent=hedgeData.before.beta.toFixed(2);
+  document.getElementById('hNifty').textContent=
+    new Intl.NumberFormat('en-IN',{maximumFractionDigits:2}).format(hedgeData.hedge.index_level);
+  document.getElementById('hBeforeVar').textContent=fmtINR(hedgeData.before.var_99);
+
+  syncContractsFromRatio();
+  recalculateHedge();
+}
+
+function fullHedgeContracts(){
+  if(!hedgeData) return 0;
+
+  const fullNotional=Math.abs(
+    Number(hedgeData.before.beta) *
+    Number(hedgeData.portfolio.portfolio_value)
+  );
+
+  const contractNotional=
+    Number(hedgeData.hedge.index_level) * 65;
+
+  return contractNotional===0 ? 0 : fullNotional/contractNotional;
+}
+
+function syncContractsFromRatio(){
+  if(!hedgeData) return;
+
+  const ratio=Number(document.getElementById("hedgeRatio").value)/100;
+  const fullContracts=fullHedgeContracts();
+
+  const contracts=Math.max(0,Math.round(fullContracts*ratio));
+  document.getElementById("contractLots").value=contracts;
+}
+
+function syncRatioFromContracts(){
+  if(!hedgeData) return;
+
+  const contracts=Math.max(0,Number(document.getElementById("contractLots").value)||0);
+  const fullContracts=fullHedgeContracts();
+
+  let ratio=fullContracts===0 ? 0 : contracts/fullContracts;
+  ratio=Math.max(0,Math.min(1,ratio));
+
+  document.getElementById("hedgeRatio").value=Math.round(ratio*100);
+  document.getElementById("hedgeRatioLabel").textContent=Math.round(ratio*100)+"%";
+
+  recalculateHedge(false);
+}
+
+function recalculateHedge(syncContracts=true){
+  if(!hedgeData) return;
+
+  const ratio=Number(document.getElementById('hedgeRatio').value)/100;
+  document.getElementById('hedgeRatioLabel').textContent=Math.round(ratio*100)+'%';
+
+  if(syncContracts){
+    syncContractsFromRatio();
+  }
+
+  const p=hedgeData.series.portfolio_returns.map(Number);
+  const m=hedgeData.series.index_returns.map(Number);
+  const value=Number(hedgeData.portfolio.portfolio_value);
+  const beta0=Number(hedgeData.before.beta);
+
+  const hedgeExposure=beta0*ratio;
+  const hedged=p.map((x,i)=>x-hedgeExposure*m[i]);
+
+  const before=riskMetrics(p,m,value);
+  const after=riskMetrics(hedged,m,value);
+
+  const hedgeNotional=beta0*value*ratio;
+  const contractNotional=Number(hedgeData.hedge.index_level)*65;
+  const theoretical=contractNotional===0?0:hedgeNotional/contractNotional;
+  const selectedContracts=Math.max(0,Number(document.getElementById("contractLots").value)||0);
+  const rounded=Math.round(selectedContracts);
+  const direction=hedgeNotional>=0?'SHORT':'LONG';
+
+  document.getElementById('hedgeNotional').textContent=fmtINR(Math.abs(hedgeNotional));
+  document.getElementById('theoreticalContracts').textContent=Math.abs(theoretical).toFixed(2);
+  document.getElementById('roundedContracts').textContent=rounded+' '+(rounded===1?'contract':'contracts');
+  document.getElementById('hedgeDirection').textContent=direction;
+
+  document.getElementById('cBetaBefore').textContent=before.beta.toFixed(2);
+  document.getElementById('cBetaAfter').textContent=after.beta.toFixed(2);
+  changeCell(document.getElementById('cBetaChange'),before.beta,after.beta);
+
+  document.getElementById('cVolBefore').textContent=pct(before.volatility);
+  document.getElementById('cVolAfter').textContent=pct(after.volatility);
+  changeCell(document.getElementById('cVolChange'),before.volatility,after.volatility);
+
+  document.getElementById('cVar95Before').textContent=fmtINR(before.var95);
+  document.getElementById('cVar95After').textContent=fmtINR(after.var95);
+  changeCell(document.getElementById('cVar95Change'),before.var95,after.var95);
+
+  document.getElementById('cVarBefore').textContent=fmtINR(before.var99);
+  document.getElementById('cVarAfter').textContent=fmtINR(after.var99);
+  changeCell(document.getElementById('cVarChange'),before.var99,after.var99);
+
+  document.getElementById('cEsBefore').textContent=fmtINR(before.es99);
+  document.getElementById('cEsAfter').textContent=fmtINR(after.es99);
+  changeCell(document.getElementById('cEsChange'),before.es99,after.es99);
+
+  const stressLossBefore=Math.max(0,beta0*value*0.10);
+  const betaAfter=after.beta;
+  const stressLossAfter=Math.max(0,betaAfter*value*0.10);
+
+  document.getElementById('cStressBefore').textContent=fmtINR(stressLossBefore);
+  document.getElementById('cStressAfter').textContent=fmtINR(stressLossAfter);
+  changeCell(document.getElementById('cStressChange'),stressLossBefore,stressLossAfter);
+
+  const effectiveness=Math.max(-1,Math.min(1,reduction(before.var99,after.var99)));
+  document.getElementById('effectivenessValue').textContent=(effectiveness*100).toFixed(1)+'%';
+  document.getElementById('effectivenessBar').style.width=Math.max(0,effectiveness*100)+'%';
+
+  if(ratio===0){
+    document.getElementById('riskAppetiteTitle').textContent='No hedge applied';
+    document.getElementById('riskAppetiteText').textContent='The portfolio retains its full estimated NIFTY beta exposure.';
+  }else if(ratio<0.5){
+    document.getElementById('riskAppetiteTitle').textContent='Light hedge';
+    document.getElementById('riskAppetiteText').textContent='Some market exposure is retained while systematic risk is reduced.';
+  }else if(ratio<0.9){
+    document.getElementById('riskAppetiteTitle').textContent='Balanced hedge';
+    document.getElementById('riskAppetiteText').textContent='A meaningful part of market beta is offset without targeting full neutrality.';
+  }else{
+    document.getElementById('riskAppetiteTitle').textContent='Near beta-neutral';
+    document.getElementById('riskAppetiteText').textContent='Most estimated NIFTY beta exposure is offset. Residual idiosyncratic risk remains.';
+  }
+
+  renderScenarios(beta0,after.beta,value);
+}
+
+function renderScenarios(betaBefore,betaAfter,value){
+  const shocks=[-0.02,-0.05,-0.10,0.05];
+  const unhedged=shocks.map(s=>betaBefore*s*value);
+  const hedged=shocks.map(s=>betaAfter*s*value);
+  const labels=shocks.map(s=>(s>0?'+':'')+(s*100).toFixed(0)+'%');
+
+  document.getElementById('scenarioRows').innerHTML=labels.map((label,i)=>`
+    <tr>
+      <td>NIFTY ${label}</td>
+      <td class="${unhedged[i]>=0?'success':'danger'}">${fmtINR(unhedged[i])}</td>
+      <td class="${hedged[i]>=0?'success':'danger'}">${fmtINR(hedged[i])}</td>
+    </tr>
+  `).join('');
+
+  Plotly.react('scenarioChart',[
+    {
+      x:labels,y:unhedged,type:'bar',name:'Unhedged P&L',
+      marker:{color:'#718096'},
+      hovertemplate:'%{x}<br>Unhedged: ₹%{y:,.0f}<extra></extra>'
+    },
+    {
+      x:labels,y:hedged,type:'bar',name:'Hedged P&L',
+      marker:{color:'#2f8cff'},
+      hovertemplate:'%{x}<br>Hedged: ₹%{y:,.0f}<extra></extra>'
+    }
+  ],{
+    barmode:'group',
+    paper_bgcolor:'rgba(0,0,0,0)',
+    plot_bgcolor:'rgba(0,0,0,0)',
+    font:{color:'#cbd7e4'},
+    margin:{l:70,r:20,t:25,b:55},
+    legend:{orientation:'h',y:1.12},
+    xaxis:{title:'NIFTY Shock',gridcolor:'#17314a'},
+    yaxis:{title:'Portfolio P&L (₹)',gridcolor:'#17314a',zerolinecolor:'#47627d'}
+  },plotConfig);
+}
+
+window.addEventListener('load',()=>{
+  try{
+    const raw=localStorage.getItem('marketRiskPortfolio');
+
+    if(!raw){
+      document.getElementById('noPortfolio').style.display='block';
+      return;
+    }
+
+    savedPortfolio=JSON.parse(raw);
+
+    if(!savedPortfolio.tickers || !savedPortfolio.weights){
+      throw new Error('Saved portfolio is incomplete.');
+    }
+
+    document.getElementById('hedgeApp').style.display='block';
+    renderHoldings();
+    startHedgeAnalysis();
+
+    document.getElementById('hedgeRatio').addEventListener('input',()=>{
+      recalculateHedge(true);
+    });
+
+    document.getElementById('contractLots').addEventListener('input',()=>{
+      syncRatioFromContracts();
+    });
+
+  }catch(err){
+    document.getElementById('noPortfolio').style.display='block';
+    document.getElementById('noPortfolio').querySelector('p').textContent=err.message;
+  }
+});
+</script>
+{% endblock %}

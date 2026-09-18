@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Home | Sathwik Devadiga{% endblock %}
+{% block content %}
+
+<section class="hero"><div class="container grid2">
+<div><div class="eyebrow">Data Analyst → Finance</div><h1>Sathwik Devadiga</h1><h2>Data Analyst <span class="gradient">→ Risk Analyst</span></h2>
+<p class="lead">Building data-driven risk analytics using Python, SQL, statistics, financial market data and visualization.</p>
+<div class="tags"><span class="tag">Market Risk</span><span class="tag">VaR</span><span class="tag">Expected Shortfall</span><span class="tag">Portfolio Analytics</span><span class="tag">Index Futures Hedging</span></div><!--<span class="tag">P&amp;L Analysis</span> -->
+ <div class="btns"><a class="btn primary" href="{{ url_for('projects') }}">Explore Risk Projects →</a></div> 
+<div class="btns"><a class="btn" href="https://linkedin.com/in/sathwik-devadiga" target="_blank">LinkedIn</a><a class="btn" href="{{ url_for('static', filename='resume/Sathwik_Devadiga_Risk_Resume.pdf') }}" download="Sathwik_Devadiga_Risk_Resume.pdf">↓ Resume</a><a class="btn" href="{{ url_for('contact') }}">Contact</a></div></div>
+<div class="card dashboard-preview"><div class="metric-grid"><div class="metric"><small>Portfolio Value</small><strong>₹10,00,000</strong></div><div class="metric"><small>1-Day 95% VaR</small><strong class="danger">₹24,500</strong></div><div class="metric"><small>Expected Shortfall</small><strong class="warning">₹31,200</strong></div></div><div class="chart"></div><div class="metric-grid" style="margin-top:10px"><div class="metric"><small>Volatility</small><strong>18.4%</strong></div><div class="metric"><small>Sharpe</small><strong class="success">1.18</strong></div><div class="metric"><small>Max Drawdown</small><strong class="danger">-14.8%</strong></div></div></div>
+</div></section>
+<section class="section"><div class="container"><div class="section-head"><div><h2>Professional Focus</h2><p>Combining data analytics experience with financial markets and quantitative risk modelling.</p></div></div>
+<div class="about-grid"><div class="card card-pad"><h3>My transition</h3><p>From business data and analytics to measuring, explaining and monitoring financial market risk.</p><div class="timeline"><div class="step"><b>Data</b><span>Python · SQL · BI</span></div><div class="step"><b>Markets</b><span>Prices · Returns</span></div><div class="step"><b>Risk</b><span>VaR · ES · Stress</span></div><div class="step"><b>Insight</b><span>Risk decisions</span></div></div></div>
+<div class="card card-pad"><h3>What I build</h3><p>Portfolio risk engines, stress-testing frameworks, options scenario tools and interactive risk dashboards.</p><a class="btn primary" href="{{ url_for('about') }}">Read About Me →</a></div></div></div></section>
+<section class="section"><div class="container">
+<div class="section-head"><div><h2>Featured Risk Projects</h2><p>A connected workflow from risk measurement to active portfolio hedging.</p></div><a class="btn" href="{{ url_for('projects') }}">View projects →</a></div>
+<div class="cards project-three-grid">
+<div class="card project-card featured"><div class="project-image"><div class="bars"><i style="height:25%"></i><i style="height:45%"></i><i style="height:70%"></i><i style="height:92%"></i><i style="height:60%"></i><i style="height:35%"></i></div></div><div class="card-pad"><h3>01 · Portfolio VaR &amp; Expected Shortfall</h3><p>Measure portfolio risk using VaR, ES, volatility, drawdown, risk contribution and backtesting.</p><a class="btn primary" href="{{ url_for('dashboard') }}">Run Project 01 →</a></div></div>
+<div class="card project-card"><div class="project-image hedge-visual"><div class="hedge-line before"></div><div class="hedge-line after"></div><div class="hedge-label">Portfolio β → NIFTY Futures</div></div><div class="card-pad"><h3>02 · Portfolio Hedging</h3><p>Use the same portfolio to size an index-futures hedge and compare risk before vs after.</p><a class="btn" href="{{ url_for('project_hedging') }}">Open Project 02 →</a></div></div>
+<div class="card project-card"><div class="project-image credit-visual"><div class="credit-flow-mini"><span>PD</span><b>×</b><span>LGD</span><b>×</b><span>EAD</span></div></div><div class="card-pad"><h3>03 · Credit Risk Model</h3><p>Assess borrower default risk, expected loss and explain the drivers behind the assigned risk grade.</p><a class="btn" href="{{ url_for('project_credit_risk') }}">Open Project 03 →</a></div></div>
+
+</div></div></section>
+
+{% endblock %}

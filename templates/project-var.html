@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Portfolio VaR & Expected Shortfall | Sathwik Devadiga{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <div class="eyebrow">Flagship Project</div>
+    <h1>Portfolio VaR &amp; Expected Shortfall Engine</h1>
+    <p class="lead">A live market-risk engine using Historical, Parametric and Monte Carlo VaR, Expected Shortfall and backtesting.</p>
+    <div class="btns"><a class="btn primary" href="{{ url_for('dashboard') }}">Open Live Risk Engine →</a></div>
+  </div>
+
+  <section class="section" style="padding-top:10px"><div class="card card-pad"><h2>Objective</h2><p>Measure portfolio market risk at configurable confidence levels and time horizons using current market data.</p></div></section>
+  <section class="section" style="padding-top:10px"><div class="card card-pad"><h2>Methodology</h2>
+    <table class="table"><tr><th>Method</th><th>Approach</th></tr>
+    <tr><td>Historical VaR</td><td>Uses the empirical distribution of realized portfolio returns.</td></tr>
+    <tr><td>Parametric VaR</td><td>Uses portfolio mean, volatility and the Normal quantile.</td></tr>
+    <tr><td>Monte Carlo VaR</td><td>Simulates portfolio returns using estimated mean and volatility.</td></tr>
+    <tr><td>Expected Shortfall</td><td>Average loss beyond the VaR cutoff.</td></tr></table>
+  </div></section>
+  <section class="section" style="padding-top:10px"><div class="card card-pad"><h2>Validation</h2><p>The live dashboard performs rolling VaR backtesting and compares realized losses against the model threshold.</p></div></section>
+  <section class="section" style="padding-top:10px"><div class="card card-pad"><h2>Business Meaning</h2><p>The model answers three risk-management questions: how much could the portfolio lose under normal conditions, how severe are losses beyond VaR, and does the model produce an acceptable number of exceptions?</p></div></section>
+  <section class="section" style="padding-top:10px"><div class="card card-pad"><h2>Model Limitations</h2><p>Historical relationships can change during stressed markets. Parametric assumptions can understate fat tails, and free quote sources may be delayed. Outputs are analytical demonstrations rather than trading or regulatory risk reports.</p></div></section>
+    <section class="section" style="padding-top:10px"><div class="card card-pad project-next-card"><div><div class="eyebrow">Project Flow</div><h2>01 Measure Risk → 02 Hedge Risk</h2><p>Run the live VaR / ES engine first. Your selected portfolio is then carried into the futures-hedging project automatically.</p></div><a class="btn primary" href="{{ url_for('dashboard') }}">Run Project 01 →</a></div></section>
+</div>
+{% endblock %}

@@ -1,0 +1,777 @@
+{% extends "base.html" %}
+{% block title %}Interactive Risk Dashboard | Sathwik Devadiga{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <div class="eyebrow"><span class="live-dot"></span>Project 01 · VaR / Expected Shortfall Engine</div>
+    <h1>Interactive Market Risk Dashboard</h1>
+    <p class="lead">Enter a portfolio and calculate market risk from current market data. Prices are fetched server-side and risk metrics are recomputed on demand.</p>
+  </div>
+
+  <div class="card card-pad">
+    <h2>Portfolio Inputs</h2>
+    <div class="form-grid">
+      <div style="grid-column:1 / -1;">
+        <label style="display:block;margin-bottom:10px;color:var(--muted);font-size:12px;">Portfolio Holdings</label>
+
+        <div class="portfolio-table-wrapper">
+          <table class="portfolio-table">
+            <thead>
+              <tr>
+                <th>Stock</th>
+                <th style="width:180px;">Weight (%)</th>
+                <th style="width:80px;"></th>
+              </tr>
+            </thead>
+            <tbody id="portfolioRows"></tbody>
+          </table>
+
+          <div class="portfolio-actions">
+            <button type="button" class="btn" onclick="addStockRow()">+ Add Stock</button>
+
+            <div class="weight-total">
+              Total Weight:
+              <strong id="totalWeight">0.0%</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>Portfolio Value (₹)</label><input id="portfolio_value" type="number" value="1000000"></div>
+      <div class="field"><label>Confidence</label><select id="confidence"><option value="0.95">95%</option><option value="0.99">99%</option></select></div>
+      <div class="field"><label>Horizon (days)</label><input id="horizon" type="number" value="1" min="1" max="10"></div>
+      <div class="field"><label>History</label><select id="period"><option value="1y">1 Year</option><option value="2y" selected>2 Years</option><option value="5y">5 Years</option></select></div>
+    </div>
+    <div class="btns">
+      <button id="calculateBtn" class="btn primary" onclick="calculateRisk()">Calculate Live Risk →</button>
+      <button class="btn" onclick="refreshQuotes()">Refresh Quotes</button>
+      <span id="status" class="status"></span>
+    </div>
+
+    <div id="progressContainer" class="risk-progress" style="display:none;">
+      <div class="risk-progress-head">
+        <span id="progressMessage">Starting...</span>
+        <strong id="progressPercent">0%</strong>
+      </div>
+      <div class="risk-progress-track">
+        <div id="progressBar" class="risk-progress-bar"></div>
+      </div>
+    </div>
+
+    <div class="api-note">Yahoo Finance data may be delayed depending on the exchange. This is suitable for portfolio analytics and demonstration, not intraday trading execution.</div>
+  </div>
+
+  <section class="section">
+    <div class="kpis">
+      <div class="card kpi"><span>Portfolio Value</span><strong id="m_portfolio">—</strong></div>
+      <div class="card kpi"><span>Historical VaR</span><strong class="danger" id="m_hist_var">—</strong></div>
+      <div class="card kpi"><span>Expected Shortfall</span><strong class="warning" id="m_es">—</strong></div>
+      <div class="card kpi"><span>Annualized Volatility</span><strong id="m_vol">—</strong></div>
+    </div>
+  </section>
+
+  <div class="cards">
+    <div class="card card-pad"><h3>Parametric VaR</h3><strong class="danger" id="m_param_var" style="font-size:26px">—</strong><p>Variance-covariance estimate.</p></div>
+    <div class="card card-pad"><h3>Monte Carlo VaR</h3><strong class="danger" id="m_mc_var" style="font-size:26px">—</strong><p>10,000 simulated portfolio returns.</p></div>
+    <div class="card card-pad"><h3>Maximum Drawdown</h3><strong class="danger" id="m_mdd" style="font-size:26px">—</strong><p>Worst peak-to-trough decline.</p></div>
+  </div>
+
+  <section class="section">
+    <div class="about-grid">
+      <div class="card card-pad chart-panel"><h3>Portfolio Return Distribution</h3><div id="distChart" style="height:320px"></div></div>
+      <div class="card card-pad chart-panel"><h3>Risk Contribution</h3><div id="riskChart" style="height:320px"></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="about-grid">
+      <div class="card card-pad chart-panel"><h3>Portfolio Performance</h3><div id="performanceChart" style="height:320px"></div></div>
+      <div class="card card-pad chart-panel"><h3>Correlation Matrix</h3><div id="corrChart" style="height:320px"></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="about-grid">
+      <div class="card card-pad">
+        <h3>Latest Market Prices</h3>
+        <table class="mini-table"><thead><tr><th>Ticker</th><th>Price</th><th>Daily Change</th></tr></thead><tbody id="quoteRows"></tbody></table>
+      </div>
+      <div class="card card-pad">
+        <h3>VaR Backtesting</h3>
+        <table class="mini-table">
+          <tr><th>Observations</th><td id="bt_obs">—</td></tr>
+          <tr><th>Expected Exceptions</th><td id="bt_expected">—</td></tr>
+          <tr><th>Actual Exceptions</th><td id="bt_actual">—</td></tr>
+          <tr><th>Result</th><td id="bt_result">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="card card-pad project-next-card">
+      <div>
+        <div class="eyebrow">Next Step</div>
+        <h2>Hedge the Portfolio</h2>
+        <p>
+          Carry the current holdings and weights into Project 02. Calculate portfolio beta
+          against NIFTY, size an index-futures hedge, and compare risk before and after hedging.
+        </p>
+      </div>
+      <button class="btn primary" onclick="goToHedging()">Continue to Project 02 →</button>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const layoutBase = {
+  paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+  font:{color:'#cbd7e4'}, margin:{l:45,r:20,t:20,b:45},
+  xaxis:{gridcolor:'#17314a'}, yaxis:{gridcolor:'#17314a'}
+};
+function fmtINR(v){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v)}
+function setStatus(msg,loading=false){document.getElementById('status').innerHTML=(loading?'<span class="spinner"></span> ':'')+msg}
+
+const stocks = [
+  {name:"Reliance Industries", ticker:"RELIANCE.NS"},
+  {name:"Tata Consultancy Services", ticker:"TCS.NS"},
+  {name:"HDFC Bank", ticker:"HDFCBANK.NS"},
+  {name:"Infosys", ticker:"INFY.NS"},
+  {name:"ICICI Bank", ticker:"ICICIBANK.NS"},
+  {name:"State Bank of India", ticker:"SBIN.NS"},
+  {name:"Bharti Airtel", ticker:"BHARTIARTL.NS"},
+  {name:"ITC", ticker:"ITC.NS"},
+  {name:"Larsen & Toubro", ticker:"LT.NS"},
+  {name:"Axis Bank", ticker:"AXISBANK.NS"},
+  {name:"Kotak Mahindra Bank", ticker:"KOTAKBANK.NS"},
+  {name:"Hindustan Unilever", ticker:"HINDUNILVR.NS"},
+  {name:"Maruti Suzuki", ticker:"MARUTI.NS"},
+  {name:"Mahindra & Mahindra", ticker:"M&M.NS"},
+  {name:"Tata Motors", ticker:"TATAMOTORS.NS"},
+  {name:"Sun Pharmaceutical", ticker:"SUNPHARMA.NS"},
+  {name:"Bajaj Finance", ticker:"BAJFINANCE.NS"},
+  {name:"Adani Enterprises", ticker:"ADANIENT.NS"},
+  {name:"Asian Paints", ticker:"ASIANPAINT.NS"},
+  {name:"Titan Company", ticker:"TITAN.NS"}
+];
+
+function createStockOptions(selectedTicker=""){
+  let html='<option value="">Select a stock</option>';
+
+  stocks.forEach(stock=>{
+    const selected=stock.ticker===selectedTicker?'selected':'';
+    html+=`<option value="${stock.ticker}" ${selected}>${stock.name}</option>`;
+  });
+
+  return html;
+}
+
+function addStockRow(ticker="",weight=""){
+  const tbody=document.getElementById("portfolioRows");
+  const row=document.createElement("tr");
+
+  row.innerHTML=`
+    <td>
+      <select class="stock-select">
+        ${createStockOptions(ticker)}
+      </select>
+    </td>
+
+    <td>
+      <input
+        type="number"
+        class="stock-weight"
+        value="${weight}"
+        min="0"
+        max="100"
+        step="0.1"
+        placeholder="Weight %"
+        oninput="updateTotalWeight();savePortfolioDraft()"
+      >
+    </td>
+
+    <td>
+      <button
+        type="button"
+        class="remove-stock"
+        onclick="removeStockRow(this)"
+        title="Remove stock"
+      >×</button>
+    </td>
+  `;
+
+  tbody.appendChild(row);
+
+  row.querySelector(".stock-select").addEventListener("change",()=>{
+    savePortfolioDraft();
+  });
+
+  updateTotalWeight();
+}
+
+function removeStockRow(button){
+  const rows=document.querySelectorAll("#portfolioRows tr");
+
+  if(rows.length<=1){
+    const row=button.closest("tr");
+    row.querySelector(".stock-select").value="";
+    row.querySelector(".stock-weight").value="";
+  }else{
+    button.closest("tr").remove();
+  }
+
+  updateTotalWeight();
+}
+
+function updateTotalWeight(){
+  const weights=document.querySelectorAll(".stock-weight");
+  let total=0;
+
+  weights.forEach(input=>{
+    total+=Number(input.value)||0;
+  });
+
+  const totalElement=document.getElementById("totalWeight");
+  totalElement.textContent=total.toFixed(1)+"%";
+
+  if(Math.abs(total-100)<0.01){
+    totalElement.style.color="#36d399";
+  }else{
+    totalElement.style.color="#ffb52e";
+  }
+}
+
+function loadDefaultPortfolio(){
+  addStockRow("RELIANCE.NS",30);
+  addStockRow("TCS.NS",25);
+  addStockRow("HDFCBANK.NS",25);
+  addStockRow("INFY.NS",20);
+}
+
+function loadSharedPortfolio(){
+  const raw=localStorage.getItem("marketRiskPortfolio");
+
+  if(!raw){
+    loadDefaultPortfolio();
+    return false;
+  }
+
+  try{
+    const state=JSON.parse(raw);
+
+    if(!Array.isArray(state.tickers) || !Array.isArray(state.weights) ||
+       state.tickers.length!==state.weights.length || state.tickers.length===0){
+      loadDefaultPortfolio();
+      return false;
+    }
+
+    document.getElementById("portfolioRows").innerHTML="";
+
+    state.tickers.forEach((ticker,i)=>{
+      addStockRow(ticker,Number(state.weights[i]));
+    });
+
+    if(state.portfolio_value){
+      document.getElementById("portfolio_value").value=state.portfolio_value;
+    }
+
+    if(state.confidence){
+      document.getElementById("confidence").value=state.confidence;
+    }
+
+    if(state.horizon){
+      document.getElementById("horizon").value=state.horizon;
+    }
+
+    if(state.period){
+      document.getElementById("period").value=state.period;
+    }
+
+    updateTotalWeight();
+    return true;
+
+  }catch(error){
+    loadDefaultPortfolio();
+    return false;
+  }
+}
+
+function getPortfolioInputs(){
+  const rows=document.querySelectorAll("#portfolioRows tr");
+  const tickerList=[];
+  const weightList=[];
+  const seen=new Set();
+
+  rows.forEach(row=>{
+    const ticker=row.querySelector(".stock-select").value;
+    const weight=Number(row.querySelector(".stock-weight").value);
+
+    if(ticker && weight>0){
+      if(seen.has(ticker)){
+        throw new Error("The same stock has been added more than once.");
+      }
+
+      seen.add(ticker);
+      tickerList.push(ticker);
+      weightList.push(weight);
+    }
+  });
+
+  if(tickerList.length===0){
+    throw new Error("Please add at least one stock.");
+  }
+
+  const totalWeight=weightList.reduce((sum,w)=>sum+w,0);
+
+  if(Math.abs(totalWeight-100)>0.01){
+    throw new Error(
+      `Portfolio weights must equal 100%. Current total: ${totalWeight.toFixed(1)}%`
+    );
+  }
+
+  return {tickerList,weightList};
+}
+
+
+function savePortfolioDraft(){
+  try{
+    const rows=document.querySelectorAll("#portfolioRows tr");
+    const tickers=[];
+    const weights=[];
+
+    rows.forEach(row=>{
+      const ticker=row.querySelector(".stock-select").value;
+      const weight=Number(row.querySelector(".stock-weight").value)||0;
+
+      if(ticker){
+        tickers.push(ticker);
+        weights.push(weight);
+      }
+    });
+
+    if(tickers.length===0) return;
+
+    const oldRaw=localStorage.getItem("marketRiskPortfolio");
+    let old={};
+    try{ old=oldRaw?JSON.parse(oldRaw):{}; }catch(e){ old={}; }
+
+    const state={
+      ...old,
+      tickers,
+      weights,
+      portfolio_value:Number(document.getElementById("portfolio_value").value)||1000000,
+      confidence:Number(document.getElementById("confidence").value)||0.95,
+      horizon:Number(document.getElementById("horizon").value)||1,
+      period:document.getElementById("period").value||"2y",
+      saved_at:new Date().toISOString()
+    };
+
+    localStorage.setItem("marketRiskPortfolio",JSON.stringify(state));
+  }catch(e){}
+}
+
+function savePortfolioState(){
+  const {tickerList,weightList}=getPortfolioInputs();
+
+  const state={
+    tickers:tickerList,
+    weights:weightList,
+    portfolio_value:Number(document.getElementById('portfolio_value').value),
+    confidence:Number(document.getElementById('confidence').value),
+    horizon:Number(document.getElementById('horizon').value),
+    period:document.getElementById('period').value,
+    saved_at:new Date().toISOString()
+  };
+
+  localStorage.setItem('marketRiskPortfolio',JSON.stringify(state));
+  return state;
+}
+
+function goToHedging(){
+  try{
+    savePortfolioState();
+    window.location.href="{{ url_for('project_hedging') }}";
+  }catch(error){
+    setStatus('Error: '+error.message);
+  }
+}
+
+function updateProgress(percent,message){
+  const container=document.getElementById('progressContainer');
+  document.getElementById('progressBar').style.width=percent+'%';
+  document.getElementById('progressPercent').textContent=percent+'%';
+  document.getElementById('progressMessage').textContent=message;
+  container.style.display='block';
+}
+
+function setCalculatingState(isCalculating){
+  const btn=document.getElementById('calculateBtn');
+  btn.disabled=isCalculating;
+  btn.style.opacity=isCalculating?'.65':'1';
+  btn.style.cursor=isCalculating?'not-allowed':'pointer';
+  btn.textContent=isCalculating?'Calculating Risk...':'Calculate Live Risk →';
+}
+
+
+function cleanTicker(ticker){
+  return String(ticker)
+    .replace(".NS","")
+    .replace(".BO","");
+}
+
+function getRiskChartHeight(count){
+  return Math.max(320, Math.min(520, 260 + count * 28));
+}
+
+function safePercent(value){
+  const n=Number(value);
+  return Number.isFinite(n) ? n * 100 : 0;
+}
+
+function displayRiskResults(d){
+  document.getElementById('m_portfolio').textContent=fmtINR(d.metrics.portfolio_value);
+  document.getElementById('m_hist_var').textContent=fmtINR(d.metrics.historical_var);
+  document.getElementById('m_param_var').textContent=fmtINR(d.metrics.parametric_var);
+  document.getElementById('m_mc_var').textContent=fmtINR(d.metrics.monte_carlo_var);
+  document.getElementById('m_es').textContent=fmtINR(d.metrics.expected_shortfall);
+  document.getElementById('m_vol').textContent=(d.metrics.annualized_volatility*100).toFixed(2)+'%';
+  document.getElementById('m_mdd').textContent=(d.metrics.max_drawdown*100).toFixed(2)+'%';
+
+  document.getElementById('bt_obs').textContent=d.backtest.observations;
+  document.getElementById('bt_expected').textContent=d.backtest.expected_exceptions.toFixed(1);
+  document.getElementById('bt_actual').textContent=d.backtest.actual_exceptions;
+  document.getElementById('bt_result').textContent=d.backtest.result;
+
+  const chartConfig={
+    responsive:true,
+    displaylogo:false,
+    modeBarButtonsToRemove:[
+      'lasso2d',
+      'select2d',
+      'autoScale2d'
+    ]
+  };
+
+  // -------------------------
+  // Return Distribution
+  // -------------------------
+  Plotly.react(
+    'distChart',
+    [{
+      x:d.distribution.map(Number),
+      type:'histogram',
+      nbinsx:40,
+      marker:{
+        color:'#2f8cff',
+        line:{width:0}
+      },
+      hovertemplate:'Return: %{x:.2%}<br>Frequency: %{y}<extra></extra>'
+    }],
+    {
+      ...layoutBase,
+      margin:{l:65,r:25,t:15,b:60},
+      bargap:0.05,
+      shapes:[{
+        type:'line',
+        x0:Number(d.var_cutoff),
+        x1:Number(d.var_cutoff),
+        y0:0,
+        y1:1,
+        yref:'paper',
+        line:{
+          color:'#ff4d4d',
+          width:2,
+          dash:'dash'
+        }
+      }],
+      annotations:[{
+        x:Number(d.var_cutoff),
+        y:1,
+        yref:'paper',
+        text:'VaR cutoff',
+        showarrow:false,
+        xanchor:'left',
+        yanchor:'bottom',
+        font:{color:'#ff6b6b',size:11}
+      }],
+      xaxis:{
+        ...layoutBase.xaxis,
+        title:{text:'Daily Portfolio Return',standoff:14},
+        tickformat:'.1%',
+        nticks:7,
+        automargin:true,
+        zeroline:false
+      },
+      yaxis:{
+        ...layoutBase.yaxis,
+        title:{text:'Frequency',standoff:12},
+        nticks:6,
+        automargin:true,
+        rangemode:'tozero'
+      }
+    },
+    chartConfig
+  );
+
+  // -------------------------
+  // Risk Contribution
+  // -------------------------
+  const riskLabels=d.risk_contribution.labels.map(cleanTicker);
+  const riskValues=d.risk_contribution.values.map(safePercent);
+
+  const riskDiv=document.getElementById('riskChart');
+  riskDiv.style.height=getRiskChartHeight(riskLabels.length)+'px';
+
+  Plotly.react(
+    'riskChart',
+    [{
+      x:riskLabels,
+      y:riskValues,
+      type:'bar',
+      marker:{color:'#2f8cff'},
+      hovertemplate:'%{x}<br>Risk contribution: %{y:.2f}%<extra></extra>'
+    }],
+    {
+      ...layoutBase,
+      margin:{l:70,r:20,t:15,b:75},
+      xaxis:{
+        ...layoutBase.xaxis,
+        title:{text:'Asset',standoff:16},
+        tickangle:riskLabels.length>6?-35:0,
+        automargin:true
+      },
+      yaxis:{
+        ...layoutBase.yaxis,
+        title:{text:'Contribution to Portfolio Variance (%)',standoff:12},
+        ticksuffix:'%',
+        tickformat:'.1f',
+        nticks:6,
+        automargin:true,
+        rangemode:'tozero'
+      }
+    },
+    chartConfig
+  );
+
+  // -------------------------
+  // Portfolio Performance
+  // -------------------------
+  Plotly.react(
+    'performanceChart',
+    [{
+      x:d.performance.dates,
+      y:d.performance.values.map(Number),
+      type:'scatter',
+      mode:'lines',
+      line:{color:'#2f8cff',width:2},
+      hovertemplate:'%{x|%d %b %Y}<br>Growth of ₹1: %{y:.3f}<extra></extra>'
+    }],
+    {
+      ...layoutBase,
+      margin:{l:70,r:25,t:15,b:65},
+      xaxis:{
+        ...layoutBase.xaxis,
+        type:'date',
+        title:{text:'Date',standoff:14},
+        nticks:7,
+        tickformat:'%b %Y',
+        tickangle:0,
+        automargin:true
+      },
+      yaxis:{
+        ...layoutBase.yaxis,
+        title:{text:'Growth of ₹1',standoff:12},
+        tickformat:'.2f',
+        nticks:6,
+        automargin:true
+      }
+    },
+    chartConfig
+  );
+
+  // -------------------------
+  // Correlation Matrix
+  // -------------------------
+  const corrLabels=d.correlation.labels.map(cleanTicker);
+  const corrDiv=document.getElementById('corrChart');
+  corrDiv.style.height=getRiskChartHeight(corrLabels.length)+'px';
+
+  Plotly.react(
+    'corrChart',
+    [{
+      z:d.correlation.values,
+      x:corrLabels,
+      y:corrLabels,
+      type:'heatmap',
+      colorscale:'RdBu',
+      reversescale:true,
+      zmin:-1,
+      zmax:1,
+      zmid:0,
+      colorbar:{
+        title:'ρ',
+        thickness:14,
+        len:0.78,
+        tickformat:'.1f'
+      },
+      hovertemplate:'%{y} × %{x}<br>Correlation: %{z:.2f}<extra></extra>'
+    }],
+    {
+      ...layoutBase,
+      margin:{
+        l:corrLabels.length>6?110:90,
+        r:70,
+        t:15,
+        b:corrLabels.length>6?100:80
+      },
+      xaxis:{
+        ...layoutBase.xaxis,
+        tickangle:corrLabels.length>5?-35:-20,
+        automargin:true,
+        side:'bottom'
+      },
+      yaxis:{
+        ...layoutBase.yaxis,
+        automargin:true,
+        autorange:'reversed'
+      }
+    },
+    chartConfig
+  );
+
+  renderQuotes(d.quotes);
+  setStatus('Updated '+d.updated_at);
+
+  // Force Plotly to recalculate sizes after data/labels change.
+  requestAnimationFrame(()=>{
+    ['distChart','riskChart','performanceChart','corrChart'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) Plotly.Plots.resize(el);
+    });
+  });
+}
+
+async function monitorRiskJob(jobId){
+  return new Promise((resolve,reject)=>{
+    const interval=setInterval(async()=>{
+      try{
+        const response=await fetch('/api/risk/progress/'+jobId);
+        const job=await response.json();
+        if(!response.ok) throw new Error(job.error||'Unable to read calculation progress');
+
+        updateProgress(job.progress,job.message);
+
+        if(job.status==='complete'){
+          clearInterval(interval);
+          displayRiskResults(job.result);
+          setCalculatingState(false);
+          resolve(job.result);
+        }
+
+        if(job.status==='error'){
+          clearInterval(interval);
+          updateProgress(job.progress||0,job.message||'Calculation failed');
+          setStatus('Error: '+(job.error||'Calculation failed'));
+          setCalculatingState(false);
+          reject(new Error(job.error||'Calculation failed'));
+        }
+      }catch(error){
+        clearInterval(interval);
+        setStatus('Error: '+error.message);
+        setCalculatingState(false);
+        reject(error);
+      }
+    },500);
+  });
+}
+
+async function calculateRisk(){
+  try{
+    const {tickerList,weightList}=getPortfolioInputs();
+    savePortfolioState();
+
+    const payload={
+      tickers:tickerList.join(","),
+      weights:weightList.join(","),
+      portfolio_value:Number(document.getElementById('portfolio_value').value),
+      confidence:Number(document.getElementById('confidence').value),
+      horizon:Number(document.getElementById('horizon').value),
+      period:document.getElementById('period').value
+    };
+
+    updateProgress(0,'Starting risk analysis...');
+    setCalculatingState(true);
+    setStatus('Calculation started');
+
+    const response=await fetch('/api/risk/start',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+
+    const data=await response.json();
+
+    if(!response.ok){
+      throw new Error(data.error||'Unable to start calculation');
+    }
+
+    await monitorRiskJob(data.job_id);
+
+  }catch(error){
+    setCalculatingState(false);
+    setStatus('Error: '+error.message);
+  }
+}
+
+function renderQuotes(qs){
+  document.getElementById('quoteRows').innerHTML=qs.map(q=>`<tr><td>${q.ticker}</td><td>${q.currency||''} ${Number(q.price).toFixed(2)}</td><td style="color:${q.change_pct>=0?'#36d399':'#ff4d4d'}">${q.change_pct>=0?'+':''}${q.change_pct.toFixed(2)}%</td></tr>`).join('');
+}
+async function refreshQuotes(){
+  setStatus('Refreshing prices...',true);
+
+  const tickerList=[];
+  document.querySelectorAll(".stock-select").forEach(select=>{
+    if(select.value && !tickerList.includes(select.value)){
+      tickerList.push(select.value);
+    }
+  });
+
+  if(tickerList.length===0){
+    setStatus('Add at least one stock before refreshing quotes.');
+    return;
+  }
+
+  try{
+    const r=await fetch(
+      '/api/quotes?tickers='+encodeURIComponent(tickerList.join(","))
+    );
+
+    const d=await r.json();
+
+    if(!r.ok){
+      throw new Error(d.error||'Quote refresh failed');
+    }
+
+    renderQuotes(d.quotes);
+    setStatus('Quotes refreshed '+d.updated_at);
+
+  }catch(e){
+    setStatus('Error: '+e.message);
+  }
+}
+
+window.addEventListener('load',()=>{
+  loadSharedPortfolio();
+
+  ["portfolio_value","confidence","horizon","period"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.addEventListener("change",savePortfolioDraft);
+    }
+  });
+
+  calculateRisk();
+});
+</script>
+{% endblock %}
